@@ -12,8 +12,15 @@ st.markdown("""
 <style>
     .stApp { background-color: #0d1117; color: #ffffff; }
     .center-text { text-align: center; font-family: 'Helvetica Neue', sans-serif; }
-    .roster-card { background-color: #161b22; border-radius: 15px; padding: 25px; width: 350px; margin: 0 auto 30px auto; border: 1px solid #30363d; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+    
+    /* Player 1 Card */
+    .roster-card { background-color: #161b22; border-radius: 15px; padding: 25px; width: 100%; max-width: 350px; margin: 0 auto 30px auto; border: 1px solid #30363d; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
     .roster-header { color: #ff5722; font-weight: 800; font-size: 1.1em; margin-bottom: 20px; letter-spacing: 1px; }
+    
+    /* AI Opponent Card */
+    .roster-card-ai { background-color: #161b22; border-radius: 15px; padding: 25px; width: 100%; max-width: 350px; margin: 0 auto 30px auto; border: 1px solid #30363d; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+    .roster-header-ai { color: #00bcd4; font-weight: 800; font-size: 1.1em; margin-bottom: 20px; letter-spacing: 1px; }
+    
     .roster-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed #30363d; }
     .roster-row:last-child { border-bottom: none; }
     .pos-label { color: #6e7681; font-weight: 700; width: 30px; }
@@ -34,7 +41,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- NBA POSITION MAPPING ---
-# Maps your UI positions to the NBA API position classifications
 POSITION_MAP = {
     "PG": ["G", "G-F", "F-G"],
     "SG": ["G", "G-F", "F-G"],
@@ -53,33 +59,87 @@ def get_team_roster(team_id):
     roster = commonteamroster.CommonTeamRoster(team_id=team_id).get_data_frames()[0]
     return roster[['PLAYER', 'POSITION']]
 
+# --- AI DRAFT LOGIC ---
+def generate_ai_draft(teams_list):
+    ai_roster = {"PG": "---", "SG": "---", "SF": "---", "PF": "---", "C": "---"}
+    
+    for pos in ai_roster.keys():
+        player_drafted = False
+        while not player_drafted:
+            random_team = random.choice(teams_list)
+            try:
+                roster_df = get_team_roster(random_team['id'])
+                allowed_nba_positions = POSITION_MAP[pos]
+                eligible_players_df = roster_df[roster_df['POSITION'].apply(lambda x: any(p in str(x) for p in allowed_nba_positions))]
+                
+                if not eligible_players_df.empty:
+                    ai_roster[pos] = random.choice(eligible_players_df['PLAYER'].tolist())
+                    player_drafted = True
+            except:
+                pass # If API fails for one team, just loop and try another
+                
+    return ai_roster
+
 # --- STATE MANAGEMENT ---
 if 'roster' not in st.session_state:
     st.session_state.roster = {"PG": "---", "SG": "---", "SF": "---", "PF": "---", "C": "---"}
 if 'spun_team' not in st.session_state:
     st.session_state.spun_team = None
+if 'ai_roster' not in st.session_state:
+    st.session_state.ai_roster = {"PG": "---", "SG": "---", "SF": "---", "PF": "---", "C": "---"}
+if 'ai_draft_complete' not in st.session_state:
+    st.session_state.ai_draft_complete = False
 
 nba_teams = get_nba_teams()
+p1_done = all(player != "---" for player in st.session_state.roster.values())
 
-# --- HEADER & ROSTER UI ---
+# --- DRAFT COMPLETION / SIDE-BY-SIDE VIEW ---
+if p1_done:
+    # Trigger AI Draft if not done yet
+    if not st.session_state.ai_draft_complete:
+        with st.spinner("🤖 AI is analyzing rosters and making its picks..."):
+            st.session_state.ai_roster = generate_ai_draft(nba_teams)
+            st.session_state.ai_draft_complete = True
+            time.sleep(1.5) # Fake suspense so the spinner is visible
+        st.rerun()
+
+    st.markdown("<h3 class='center-text' style='color:#ffffff; margin-bottom: 30px;'>FINAL MATCHUP</h3>", unsafe_allow_html=True)
+    
+    # Render both columns side-by-side
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        roster_html = "<div class='roster-card'><div class='roster-header'>🔴 PLAYER 1</div>"
+        for pos, player in st.session_state.roster.items():
+            roster_html += f"<div class='roster-row'><span class='pos-label'>{pos}</span><span class='player-name'>{player}</span></div>"
+        roster_html += "</div>"
+        st.markdown(roster_html, unsafe_allow_html=True)
+
+    with col2:
+        ai_html = "<div class='roster-card-ai'><div class='roster-header-ai'>🤖 AI OPPONENT</div>"
+        for pos, player in st.session_state.ai_roster.items():
+            ai_html += f"<div class='roster-row'><span class='pos-label'>{pos}</span><span class='player-name'>{player}</span></div>"
+        ai_html += "</div>"
+        st.markdown(ai_html, unsafe_allow_html=True)
+
+    st.success("🎉 Matchup set! Ready for tip-off.")
+    if st.button("START NEW MATCHUP"):
+        st.session_state.roster = {"PG": "---", "SG": "---", "SF": "---", "PF": "---", "C": "---"}
+        st.session_state.ai_roster = {"PG": "---", "SG": "---", "SF": "---", "PF": "---", "C": "---"}
+        st.session_state.spun_team = None
+        st.session_state.ai_draft_complete = False
+        st.rerun()
+    st.stop()
+
+# --- HEADER & ROSTER UI (WHILE DRAFTING) ---
 st.markdown("<h3 class='center-text' style='color:#ff5722; margin-bottom: 30px;'>PLAYER 1's DRAFT</h3>", unsafe_allow_html=True)
 
-# Fixed HTML string formatting (No indentation to prevent markdown code block rendering)
 roster_html = "<div class='roster-card'><div class='roster-header'>🔴 PLAYER 1</div>"
 for pos, player in st.session_state.roster.items():
     player_display = player if player else "---"
     roster_html += f"<div class='roster-row'><span class='pos-label'>{pos}</span><span class='player-name'>{player_display}</span></div>"
 roster_html += "</div>"
 st.markdown(roster_html, unsafe_allow_html=True)
-
-# --- DRAFT COMPLETION CHECK ---
-if all(player != "---" for player in st.session_state.roster.values()):
-    st.success("🎉 Roster Complete! Ready for tip-off.")
-    if st.button("START NEW DRAFT"):
-        st.session_state.roster = {"PG": "---", "SG": "---", "SF": "---", "PF": "---", "C": "---"}
-        st.session_state.spun_team = None
-        st.rerun()
-    st.stop()
 
 # --- MAIN LOGIC AREA ---
 spin_container = st.empty()
@@ -106,14 +166,10 @@ else:
         
         st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
         
-        # 1. User picks the position they want to fill first
         selected_pos = st.selectbox("1. SELECT POSITION TO FILL", available_positions)
         
-        # 2. Filter the roster based on actual NBA positions mapped to that selection
         if selected_pos:
             allowed_nba_positions = POSITION_MAP[selected_pos]
-            
-            # Find players whose NBA position contains one of our allowed map values
             eligible_players_df = roster_df[roster_df['POSITION'].apply(lambda x: any(p in str(x) for p in allowed_nba_positions))]
             
             if eligible_players_df.empty:
