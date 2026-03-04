@@ -22,7 +22,7 @@ export function RosterCard({ roster, title, isAI = false }: RosterCardProps) {
             <span className="pos-label">{pos}</span>
             <div className="player-info">
               <span className="player-name">{playerName || '---'}</span>
-              {teamName && <span className="team-name">{teamName}</span>}
+              {teamName && <span className="player-team">{teamName}</span>}
             </div>
           </div>
         );
