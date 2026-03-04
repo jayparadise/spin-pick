@@ -1,4 +1,5 @@
 import { Team, Player } from './types';
+import { NBA_ROSTERS } from './data/nbaRosters';
 
 const NBA_TEAMS_CACHE: Team[] = [
   { id: 1610612737, city: 'Atlanta', nickname: 'Hawks' },
@@ -41,7 +42,11 @@ export async function getTeams(league: string): Promise<Team[]> {
   return generateMockTeams();
 }
 
-export async function getTeamRoster(league: string): Promise<Player[]> {
+export async function getTeamRoster(league: string, teamId: number): Promise<Player[]> {
+  if (league === 'NBA' && NBA_ROSTERS[teamId]) {
+    return NBA_ROSTERS[teamId];
+  }
+
   return generateMockRoster(league);
 }
 

@@ -10,7 +10,7 @@ export const LEAGUE_CONFIGS: Record<string, LeagueConfig> = {
       PF: ['F', 'F-C', 'C-F'],
       C: ['C', 'F-C', 'C-F'],
     },
-    live: false,
+    live: true,
   },
   EPL: {
     positions: ['GK', 'DEF', 'MID1', 'MID2', 'FWD1', 'FWD2'],

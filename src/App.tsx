@@ -62,7 +62,7 @@ function App() {
     setSpinningTeam(null);
 
     setIsLoadingRoster(true);
-    const roster = await getTeamRoster(selectedLeague);
+    const roster = await getTeamRoster(selectedLeague, finalTeam.id);
     setTeamRoster(roster);
     setIsLoadingRoster(false);
 
@@ -85,7 +85,7 @@ function App() {
   async function performAIDraft() {
     setIsDraftingAI(true);
     await sleep(1500);
-    const aiDraft = await generateAIDraft(selectedLeague);
+    const aiDraft = await generateAIDraft(selectedLeague, teams);
     setAiRoster(aiDraft);
     setGameState('complete');
     setIsDraftingAI(false);

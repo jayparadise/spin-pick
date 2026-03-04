@@ -25,23 +25,33 @@ export function filterEligiblePlayers(
   );
 }
 
-export async function generateAIDraft(league: string): Promise<Roster> {
+export async function generateAIDraft(league: string, teams: any[]): Promise<Roster> {
   const positions = LEAGUE_CONFIGS[league].positions;
   const roster: Roster = {};
 
   for (const pos of positions) {
-    try {
-      const teamRoster = await getTeamRoster(league);
-      const eligible = filterEligiblePlayers(teamRoster, pos, league);
+    let drafted = false;
+    let attempts = 0;
+    const maxAttempts = 50;
 
-      if (eligible.length > 0) {
-        const randomPlayer = eligible[Math.floor(Math.random() * eligible.length)];
-        roster[pos] = randomPlayer.name;
-      } else {
-        roster[pos] = `AI ${pos} Player`;
+    while (!drafted && attempts < maxAttempts) {
+      const randomTeam = teams[Math.floor(Math.random() * teams.length)];
+      try {
+        const teamRoster = await getTeamRoster(league, randomTeam.id);
+        const eligible = filterEligiblePlayers(teamRoster, pos, league);
+
+        if (eligible.length > 0) {
+          const randomPlayer = eligible[Math.floor(Math.random() * eligible.length)];
+          roster[pos] = randomPlayer.name;
+          drafted = true;
+        }
+      } catch (error) {
+        console.error('AI draft error:', error);
       }
-    } catch (error) {
-      console.error('AI draft error:', error);
+      attempts++;
+    }
+
+    if (!drafted) {
       roster[pos] = `AI ${pos} Player`;
     }
   }
