@@ -35,38 +35,41 @@ export async function generateAIDraft(league: string, teams: any[]): Promise<Ros
 
   for (const pos of positions) {
     let drafted = false;
-    let attempts = 0;
-    const maxAttempts = 50;
-    const candidatePlayers: Array<{ player: Player; team: any; fantasyPoints: number }> = [];
+    const candidatePlayers: Array<{ player: Player; team: any }> = [];
 
-    while (!drafted && attempts < maxAttempts && candidatePlayers.length < 10) {
-      const randomTeam = teams[Math.floor(Math.random() * teams.length)];
+    const randomTeams = teams.sort(() => Math.random() - 0.5).slice(0, 3);
+
+    for (const randomTeam of randomTeams) {
       try {
         const teamRoster = await getTeamRoster(league, randomTeam.id);
         const eligible = filterEligiblePlayers(teamRoster, pos, league);
 
         for (const player of eligible) {
-          const teamName = `${randomTeam.city} ${randomTeam.nickname}`;
-          const stats = await getPlayerStats(player.name, teamName);
-
           candidatePlayers.push({
             player,
             team: randomTeam,
-            fantasyPoints: stats?.fantasy_points_per_game || 12.0
           });
-
-          if (candidatePlayers.length >= 10) break;
         }
       } catch (error) {
         console.error('AI draft error:', error);
       }
-      attempts++;
     }
 
     if (candidatePlayers.length > 0) {
-      candidatePlayers.sort((a, b) => b.fantasyPoints - a.fantasyPoints);
+      const playersWithStats = await Promise.all(
+        candidatePlayers.map(async (candidate) => {
+          const teamName = `${candidate.team.city} ${candidate.team.nickname}`;
+          const stats = await getPlayerStats(candidate.player.name, teamName);
+          return {
+            ...candidate,
+            fantasyPoints: stats?.fantasy_points_per_game || 12.0,
+          };
+        })
+      );
 
-      const topPlayers = candidatePlayers.slice(0, 3);
+      playersWithStats.sort((a, b) => b.fantasyPoints - a.fantasyPoints);
+
+      const topPlayers = playersWithStats.slice(0, 3);
       const selectedCandidate = topPlayers[Math.floor(Math.random() * topPlayers.length)];
 
       roster[pos] = {
