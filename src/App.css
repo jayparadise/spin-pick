@@ -277,6 +277,19 @@ body {
   border-color: #6e7681;
 }
 
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-width: 400px;
+  margin: 30px auto;
+}
+
+.button-group .btn-primary,
+.button-group .btn-secondary {
+  margin: 0;
+}
+
 .no-players-warning {
   text-align: center;
   padding: 20px;

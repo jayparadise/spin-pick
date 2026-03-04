@@ -51,10 +51,10 @@ function App() {
 
     setGameState('spinning');
 
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < 8; i++) {
       const randomTeam = teams[Math.floor(Math.random() * teams.length)];
       setSpinningTeam(randomTeam);
-      await sleep(Math.max(50, i * 20));
+      await sleep(Math.max(30, i * 15));
     }
 
     const finalTeam = teams[Math.floor(Math.random() * teams.length)];
@@ -96,6 +96,44 @@ function App() {
     setAiRoster(aiDraft);
     setGameState('complete');
     setIsDraftingAI(false);
+  }
+
+  async function handleAutoDraft() {
+    if (teams.length === 0) return;
+
+    const positions = LEAGUE_CONFIGS[selectedLeague].positions;
+    const newRoster: Roster = {};
+
+    for (const pos of positions) {
+      let drafted = false;
+      let attempts = 0;
+
+      while (!drafted && attempts < 20) {
+        const randomTeam = teams[Math.floor(Math.random() * teams.length)];
+        try {
+          const roster = await getTeamRoster(selectedLeague, randomTeam.id);
+          const eligiblePlayers = roster.filter((player) => {
+            const allowedPositions = LEAGUE_CONFIGS[selectedLeague].positionMap[pos] || [];
+            return allowedPositions.some((position) => player.position.includes(position));
+          });
+
+          if (eligiblePlayers.length > 0) {
+            const randomPlayer = eligiblePlayers[Math.floor(Math.random() * eligiblePlayers.length)];
+            newRoster[pos] = randomPlayer.name;
+            drafted = true;
+          }
+        } catch (error) {
+          console.error('Auto draft error:', error);
+        }
+        attempts++;
+      }
+
+      if (!drafted) {
+        newRoster[pos] = `Auto ${pos} Player`;
+      }
+    }
+
+    setPlayerRoster(newRoster);
   }
 
   function handleNewGame() {
@@ -166,9 +204,14 @@ function App() {
                 )}
 
                 {gameState === 'league-select' && !spunTeam && (
-                  <button onClick={handleSpin} className="btn-primary btn-spin">
-                    SPIN
-                  </button>
+                  <div className="button-group">
+                    <button onClick={handleSpin} className="btn-primary btn-spin">
+                      SPIN
+                    </button>
+                    <button onClick={handleAutoDraft} className="btn-secondary">
+                      AUTO-DRAFT
+                    </button>
+                  </div>
                 )}
 
                 {isLoadingRoster && (
