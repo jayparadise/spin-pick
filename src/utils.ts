@@ -1,6 +1,7 @@
 import { Player, Roster } from './types';
 import { LEAGUE_CONFIGS } from './config';
 import { getTeamRoster } from './api';
+import { getPlayerStats } from './playerStats';
 
 export function createEmptyRoster(league: string): Roster {
   const positions = LEAGUE_CONFIGS[league].positions;
@@ -36,25 +37,43 @@ export async function generateAIDraft(league: string, teams: any[]): Promise<Ros
     let drafted = false;
     let attempts = 0;
     const maxAttempts = 50;
+    const candidatePlayers: Array<{ player: Player; team: any; fantasyPoints: number }> = [];
 
-    while (!drafted && attempts < maxAttempts) {
+    while (!drafted && attempts < maxAttempts && candidatePlayers.length < 10) {
       const randomTeam = teams[Math.floor(Math.random() * teams.length)];
       try {
         const teamRoster = await getTeamRoster(league, randomTeam.id);
         const eligible = filterEligiblePlayers(teamRoster, pos, league);
 
-        if (eligible.length > 0) {
-          const randomPlayer = eligible[Math.floor(Math.random() * eligible.length)];
-          roster[pos] = {
-            name: randomPlayer.name,
-            team: `${randomTeam.city} ${randomTeam.nickname}`
-          };
-          drafted = true;
+        for (const player of eligible) {
+          const teamName = `${randomTeam.city} ${randomTeam.nickname}`;
+          const stats = await getPlayerStats(player.name, teamName);
+
+          candidatePlayers.push({
+            player,
+            team: randomTeam,
+            fantasyPoints: stats?.fantasy_points_per_game || 12.0
+          });
+
+          if (candidatePlayers.length >= 10) break;
         }
       } catch (error) {
         console.error('AI draft error:', error);
       }
       attempts++;
+    }
+
+    if (candidatePlayers.length > 0) {
+      candidatePlayers.sort((a, b) => b.fantasyPoints - a.fantasyPoints);
+
+      const topPlayers = candidatePlayers.slice(0, 3);
+      const selectedCandidate = topPlayers[Math.floor(Math.random() * topPlayers.length)];
+
+      roster[pos] = {
+        name: selectedCandidate.player.name,
+        team: `${selectedCandidate.team.city} ${selectedCandidate.team.nickname}`
+      };
+      drafted = true;
     }
 
     if (!drafted) {
