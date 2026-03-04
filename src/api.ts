@@ -1,8 +1,5 @@
 import { Team, Player } from './types';
 
-const NBA_API_BASE = 'https://stats.nba.com/stats';
-const FPL_API_BASE = 'https://fantasy.premierleague.com/api';
-
 const NBA_TEAMS_CACHE: Team[] = [
   { id: 1610612737, city: 'Atlanta', nickname: 'Hawks' },
   { id: 1610612738, city: 'Boston', nickname: 'Celtics' },
@@ -41,78 +38,11 @@ export async function getTeams(league: string): Promise<Team[]> {
     return NBA_TEAMS_CACHE;
   }
 
-  if (league === 'EPL') {
-    try {
-      const response = await fetch(`${FPL_API_BASE}/bootstrap-static/`, {
-        headers: { 'User-Agent': 'Mozilla/5.0' },
-      });
-      const data = await response.json();
-      return data.teams.map((t: { id: number; short_name: string; name: string }) => ({
-        id: t.id,
-        city: t.short_name,
-        nickname: t.name,
-      }));
-    } catch (error) {
-      console.error('EPL API error:', error);
-      return generateMockTeams();
-    }
-  }
-
   return generateMockTeams();
 }
 
-export async function getTeamRoster(league: string, teamId: number): Promise<Player[]> {
-  if (league === 'NBA') {
-    return getNBARoster(teamId);
-  }
-
-  if (league === 'EPL') {
-    return getEPLRoster(teamId);
-  }
-
+export async function getTeamRoster(league: string): Promise<Player[]> {
   return generateMockRoster(league);
-}
-
-async function getNBARoster(teamId: number): Promise<Player[]> {
-  try {
-    const response = await fetch(
-      `${NBA_API_BASE}/commonteamroster?Season=2024-25&TeamID=${teamId}`,
-      {
-        headers: {
-          'User-Agent': 'Mozilla/5.0',
-          'Referer': 'https://stats.nba.com/',
-        },
-      }
-    );
-    const data = await response.json();
-    const players = data.resultSets[0].rowSet;
-    return players.map((p: string[]) => ({
-      name: p[3],
-      position: p[4],
-    }));
-  } catch (error) {
-    console.error('NBA API error:', error);
-    return generateMockRoster('NBA');
-  }
-}
-
-async function getEPLRoster(teamId: number): Promise<Player[]> {
-  try {
-    const response = await fetch(`${FPL_API_BASE}/bootstrap-static/`, {
-      headers: { 'User-Agent': 'Mozilla/5.0' },
-    });
-    const data = await response.json();
-    const posMap: Record<number, string> = { 1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD' };
-    return data.elements
-      .filter((p: { team: number }) => p.team === teamId)
-      .map((p: { first_name: string; second_name: string; element_type: number }) => ({
-        name: `${p.first_name} ${p.second_name}`,
-        position: posMap[p.element_type] || 'UNKNOWN',
-      }));
-  } catch (error) {
-    console.error('EPL API error:', error);
-    return generateMockRoster('EPL');
-  }
 }
 
 function generateMockTeams(): Team[] {

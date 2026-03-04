@@ -10,7 +10,7 @@ export const LEAGUE_CONFIGS: Record<string, LeagueConfig> = {
       PF: ['F', 'F-C', 'C-F'],
       C: ['C', 'F-C', 'C-F'],
     },
-    live: true,
+    live: false,
   },
   EPL: {
     positions: ['GK', 'DEF', 'MID1', 'MID2', 'FWD1', 'FWD2'],
@@ -22,7 +22,7 @@ export const LEAGUE_CONFIGS: Record<string, LeagueConfig> = {
       FWD1: ['FWD'],
       FWD2: ['FWD'],
     },
-    live: true,
+    live: false,
   },
   NFL: {
     positions: ['QB', 'RB', 'WR1', 'WR2', 'TE', 'DEF'],
