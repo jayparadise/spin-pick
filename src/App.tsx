@@ -70,10 +70,17 @@ function App() {
   }
 
   function handleDraftPlayer(position: string, player: string) {
-    setPlayerRoster((prev) => ({ ...prev, [position]: player }));
-    setSpunTeam(null);
-    setTeamRoster([]);
-    setGameState('league-select');
+    const updatedRoster = { ...playerRoster, [position]: player };
+    setPlayerRoster(updatedRoster);
+
+    if (isRosterComplete(updatedRoster)) {
+      setSpunTeam(null);
+      setTeamRoster([]);
+    } else {
+      setSpunTeam(null);
+      setTeamRoster([]);
+      setGameState('league-select');
+    }
   }
 
   function handleReSpin() {
