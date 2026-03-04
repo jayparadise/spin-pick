@@ -11,7 +11,10 @@ export function createEmptyRoster(league: string): Roster {
 }
 
 export function isRosterComplete(roster: Roster): boolean {
-  return Object.values(roster).every((player) => player !== '---');
+  return Object.values(roster).every((player) => {
+    if (typeof player === 'string') return player !== '---';
+    return player.name !== '---';
+  });
 }
 
 export function filterEligiblePlayers(
@@ -42,7 +45,10 @@ export async function generateAIDraft(league: string, teams: any[]): Promise<Ros
 
         if (eligible.length > 0) {
           const randomPlayer = eligible[Math.floor(Math.random() * eligible.length)];
-          roster[pos] = randomPlayer.name;
+          roster[pos] = {
+            name: randomPlayer.name,
+            team: `${randomTeam.city} ${randomTeam.nickname}`
+          };
           drafted = true;
         }
       } catch (error) {
@@ -52,7 +58,7 @@ export async function generateAIDraft(league: string, teams: any[]): Promise<Ros
     }
 
     if (!drafted) {
-      roster[pos] = `AI ${pos} Player`;
+      roster[pos] = { name: `AI ${pos} Player`, team: 'Unknown' };
     }
   }
 

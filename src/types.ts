@@ -7,6 +7,12 @@ export interface Team {
 export interface Player {
   name: string;
   position: string;
+  team?: string;
+}
+
+export interface RosterPlayer {
+  name: string;
+  team: string;
 }
 
 export interface LeagueConfig {
@@ -15,6 +21,6 @@ export interface LeagueConfig {
   live: boolean;
 }
 
-export type Roster = Record<string, string>;
+export type Roster = Record<string, RosterPlayer | string>;
 
 export type GameState = 'league-select' | 'spinning' | 'drafting' | 'complete';

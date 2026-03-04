@@ -70,7 +70,11 @@ function App() {
   }
 
   function handleDraftPlayer(position: string, player: string) {
-    const updatedRoster = { ...playerRoster, [position]: player };
+    const teamName = spunTeam ? `${spunTeam.city} ${spunTeam.nickname}` : 'Unknown';
+    const updatedRoster = {
+      ...playerRoster,
+      [position]: { name: player, team: teamName }
+    };
     setPlayerRoster(updatedRoster);
 
     if (isRosterComplete(updatedRoster)) {
@@ -119,7 +123,10 @@ function App() {
 
           if (eligiblePlayers.length > 0) {
             const randomPlayer = eligiblePlayers[Math.floor(Math.random() * eligiblePlayers.length)];
-            newRoster[pos] = randomPlayer.name;
+            newRoster[pos] = {
+              name: randomPlayer.name,
+              team: `${randomTeam.city} ${randomTeam.nickname}`
+            };
             drafted = true;
           }
         } catch (error) {
@@ -129,7 +136,7 @@ function App() {
       }
 
       if (!drafted) {
-        newRoster[pos] = `Auto ${pos} Player`;
+        newRoster[pos] = { name: `Auto ${pos} Player`, team: 'Unknown' };
       }
     }
 

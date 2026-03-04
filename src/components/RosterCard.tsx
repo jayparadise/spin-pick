@@ -13,12 +13,20 @@ export function RosterCard({ roster, title, isAI = false }: RosterCardProps) {
   return (
     <div className={cardClass}>
       <div className={headerClass}>{title}</div>
-      {Object.entries(roster).map(([pos, player]) => (
-        <div key={pos} className="roster-row">
-          <span className="pos-label">{pos}</span>
-          <span className="player-name">{player || '---'}</span>
-        </div>
-      ))}
+      {Object.entries(roster).map(([pos, player]) => {
+        const playerName = typeof player === 'string' ? player : player.name;
+        const teamName = typeof player === 'string' ? null : player.team;
+
+        return (
+          <div key={pos} className="roster-row">
+            <span className="pos-label">{pos}</span>
+            <div className="player-info">
+              <span className="player-name">{playerName || '---'}</span>
+              {teamName && <span className="team-name">{teamName}</span>}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
