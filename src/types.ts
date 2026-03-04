@@ -8,6 +8,7 @@ export interface Player {
   name: string;
   position: string;
   team?: string;
+  fantasyScore?: number;
 }
 
 export interface RosterPlayer {

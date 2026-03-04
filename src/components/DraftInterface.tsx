@@ -28,7 +28,11 @@ export function DraftInterface({
   const [selectedPlayer, setSelectedPlayer] = useState('');
 
   const eligiblePlayers = selectedPosition
-    ? filterEligiblePlayers(teamRoster, selectedPosition, league)
+    ? filterEligiblePlayers(teamRoster, selectedPosition, league).sort((a, b) => {
+        const scoreA = a.fantasyScore ?? 0;
+        const scoreB = b.fantasyScore ?? 0;
+        return scoreB - scoreA;
+      })
     : [];
 
   const handleConfirm = () => {
@@ -85,6 +89,9 @@ export function DraftInterface({
                       {eligiblePlayers.map((player) => (
                         <option key={player.name} value={player.name}>
                           {player.name}
+                          {player.fantasyScore !== undefined
+                            ? ` (${player.fantasyScore.toFixed(1)} FPG)`
+                            : ''}
                         </option>
                       ))}
                     </select>

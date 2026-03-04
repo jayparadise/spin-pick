@@ -3,6 +3,7 @@ import { Team, Player, Roster, GameState } from './types';
 import { LEAGUE_CONFIGS } from './config';
 import { getTeams, getTeamRoster } from './api';
 import { createEmptyRoster, isRosterComplete, generateAIDraft, sleep } from './utils';
+import { getBulkPlayerStats } from './playerStats';
 import { LeagueSelector } from './components/LeagueSelector';
 import { RosterCard } from './components/RosterCard';
 import { TeamCard } from './components/TeamCard';
@@ -63,7 +64,18 @@ function App() {
 
     setIsLoadingRoster(true);
     const roster = await getTeamRoster(selectedLeague, finalTeam.id);
-    setTeamRoster(roster);
+
+    const teamName = `${finalTeam.city} ${finalTeam.nickname}`;
+    const playerStats = await getBulkPlayerStats(
+      roster.map(player => ({ name: player.name, team: teamName }))
+    );
+
+    const rosterWithStats = roster.map(player => ({
+      ...player,
+      fantasyScore: playerStats.get(`${player.name}|${teamName}`)?.fantasy_points_per_game
+    }));
+
+    setTeamRoster(rosterWithStats);
     setIsLoadingRoster(false);
 
     setGameState('drafting');
