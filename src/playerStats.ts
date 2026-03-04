@@ -13,6 +13,13 @@ export interface PlayerStatData {
   created_at: string;
 }
 
+function isDataStale(lastUpdated: string): boolean {
+  const lastUpdatedDate = new Date(lastUpdated);
+  const now = new Date();
+  const hoursSinceUpdate = (now.getTime() - lastUpdatedDate.getTime()) / (1000 * 60 * 60);
+  return hoursSinceUpdate >= 24;
+}
+
 export async function getPlayerStats(playerName: string, team: string): Promise<PlayerStatData | null> {
   try {
     const { data, error } = await supabase
@@ -28,7 +35,25 @@ export async function getPlayerStats(playerName: string, team: string): Promise<
     }
 
     if (data) {
-      return data;
+      if (!isDataStale(data.last_updated)) {
+        return data;
+      }
+
+      await fetchAndStorePlayerStats(playerName, team);
+
+      const { data: refreshedData, error: refreshError } = await supabase
+        .from('player_stats')
+        .select('*')
+        .eq('player_name', playerName)
+        .eq('team', team)
+        .maybeSingle();
+
+      if (refreshError) {
+        console.error('Error fetching refreshed player stats:', refreshError);
+        return data;
+      }
+
+      return refreshedData || data;
     }
 
     await fetchAndStorePlayerStats(playerName, team);
