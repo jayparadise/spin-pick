@@ -14,6 +14,7 @@ export interface Player {
 export interface RosterPlayer {
   name: string;
   team: string;
+  fantasyScore?: number;
 }
 
 export interface LeagueConfig {

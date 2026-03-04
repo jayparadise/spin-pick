@@ -83,9 +83,14 @@ function App() {
 
   function handleDraftPlayer(position: string, player: string) {
     const teamName = spunTeam ? `${spunTeam.city} ${spunTeam.nickname}` : 'Unknown';
+    const draftedPlayer = teamRoster.find(p => p.name === player);
     const updatedRoster = {
       ...playerRoster,
-      [position]: { name: player, team: teamName }
+      [position]: {
+        name: player,
+        team: teamName,
+        fantasyScore: draftedPlayer?.fantasyScore
+      }
     };
     setPlayerRoster(updatedRoster);
 
@@ -135,9 +140,15 @@ function App() {
 
           if (eligiblePlayers.length > 0) {
             const randomPlayer = eligiblePlayers[Math.floor(Math.random() * eligiblePlayers.length)];
+            const teamName = `${randomTeam.city} ${randomTeam.nickname}`;
+
+            const playerStats = await getBulkPlayerStats([{ name: randomPlayer.name, team: teamName }]);
+            const fantasyScore = playerStats.get(`${randomPlayer.name}|${teamName}`)?.fantasy_points_per_game;
+
             newRoster[pos] = {
               name: randomPlayer.name,
-              team: `${randomTeam.city} ${randomTeam.nickname}`
+              team: teamName,
+              fantasyScore
             };
             drafted = true;
           }

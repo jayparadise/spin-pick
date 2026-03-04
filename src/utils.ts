@@ -74,7 +74,8 @@ export async function generateAIDraft(league: string, teams: any[]): Promise<Ros
 
       roster[pos] = {
         name: selectedCandidate.player.name,
-        team: `${selectedCandidate.team.city} ${selectedCandidate.team.nickname}`
+        team: `${selectedCandidate.team.city} ${selectedCandidate.team.nickname}`,
+        fantasyScore: selectedCandidate.fantasyPoints
       };
       drafted = true;
     }
